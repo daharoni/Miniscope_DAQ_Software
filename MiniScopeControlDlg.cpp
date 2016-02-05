@@ -108,6 +108,7 @@ CMiniScopeControlDlg::CMiniScopeControlDlg(CWnd* pParent /*=NULL*/)
 	, mMaxFluor(0)
 	, mMinFluorDisplay(0)
 	, mMaxFluorDisplay(0)
+	, mMSFPS(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -150,6 +151,8 @@ void CMiniScopeControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_MAXFLUOR, mMaxFluor);
 	DDX_Text(pDX, IDC_MINFLUORDISPLAY, mMinFluorDisplay);
 	DDX_Text(pDX, IDC_MAXFLUORDISPLAY, mMaxFluorDisplay);
+	DDX_CBIndex(pDX, IDC_COMBO1, mMSFPS);
+	DDX_Control(pDX, IDC_COMBO1, mMSFPSCBox);
 }
 
 BEGIN_MESSAGE_MAP(CMiniScopeControlDlg, CDialogEx)
@@ -184,6 +187,7 @@ BEGIN_MESSAGE_MAP(CMiniScopeControlDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_CHECKTRIGREC, &CMiniScopeControlDlg::OnBnClickedChecktrigrec)
 	ON_EN_KILLFOCUS(IDC_MINFLUORDISPLAY, &CMiniScopeControlDlg::OnEnKillfocusMinfluordisplay)
 	ON_EN_KILLFOCUS(IDC_MAXFLUORDISPLAY, &CMiniScopeControlDlg::OnEnKillfocusMaxfluordisplay)
+	ON_CBN_CLOSEUP(IDC_COMBO1, &CMiniScopeControlDlg::OnCbnCloseupCombo1)
 END_MESSAGE_MAP()
 
 
@@ -272,6 +276,8 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 
 	mMsCapFrameCountGlobal = 0;
 	mBehavCapFrameCountGlobal = 0;
+
+	mMSFPS = 1;
 	//------------ Timer for cameras -----------
 	QueryPerformanceFrequency(&Frequency); 
 	QueryPerformanceCounter(&StartingTime);
@@ -488,6 +494,7 @@ void CMiniScopeControlDlg::OnBnClickedScopeconnect()
 	//str.Format(L"Mat Channel: %d", msFrame[0].channels());
 	//		AddListText(str);
 	GetDlgItem(IDC_SCREENSHOT)->EnableWindow(TRUE);
+	GetDlgItem(IDC_COMBO1)->EnableWindow(TRUE);
 
 	GetDlgItem(IDC_SLIDERSCOPEEXPOSURE)->EnableWindow(TRUE);
 	GetDlgItem(IDC_SLIDERSCOPEGAIN)->EnableWindow(TRUE);
@@ -1096,4 +1103,39 @@ void CMiniScopeControlDlg::OnEnKillfocusMaxfluordisplay()
 {
 	// TODO: Add your control notification handler code here
 	UpdateData(TRUE);
+}
+
+
+void CMiniScopeControlDlg::OnCbnCloseupCombo1()
+{
+	UpdateData(TRUE);
+	CString str,str2;
+	mMSFPSCBox.GetLBText(mMSFPSCBox.GetCurSel(),str2);
+	int cBoxVal = _ttoi(str2);
+	switch(cBoxVal) 
+	{
+		case (5):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS5);
+			break;
+		case (10):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS10);
+			break;
+		case (15):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS15);
+			break;
+		case (20):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS20);
+			break;
+		case (30):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS30);
+			break;
+		case (60):
+			msCam.set(CV_CAP_PROP_SATURATION, FPS60);
+			break;
+		default:
+			break;
+	}
+	str.Format(L"Scope FPS updated: %d", cBoxVal);
+			AddListText(str);
+
 }

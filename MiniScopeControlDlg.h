@@ -196,4 +196,7 @@ public:
 	int mMaxFluorDisplay;
 	afx_msg void OnEnKillfocusMinfluordisplay();
 	afx_msg void OnEnKillfocusMaxfluordisplay();
+	afx_msg void OnCbnCloseupCombo1();
+	int mMSFPS;
+	CComboBox mMSFPSCBox;
 };
