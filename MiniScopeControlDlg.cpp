@@ -362,10 +362,10 @@ void CMiniScopeControlDlg::UpdateLEDs(int ledNum, int value) {
 		msCam.set(CV_CAP_PROP_HUE,(outValue>>4)&0x00FF); //Added by Daniel and commented out COMM communication below 4_9_2015
 
 		
-			str.Format(L"LED power updated: %d", mValueExcitation);
+			str.Format(L"LED power updated: %d", value);
 			AddListText(str);
 		if (record == TRUE) {
-			str.Format(L"%u\tLED excitation intensity set to %d\n",mElapsedTime,mValueExcitation);
+			str.Format(L"%u\tLED excitation intensity set to %d\n",mElapsedTime,value);
 			settingsFile.WriteString(str);
 		}
 	}
@@ -705,7 +705,8 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 		//Added for triggerable recording
 		if (self->mCheckTrigRec == true) {
 			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
-			
+			//str.Format(L"GPIO State: %u",temp);
+			//self->AddListText(str);
 			if ((temp & TRIG_RECORD_EXT) == TRIG_RECORD_EXT) {
 				if (self->record == false) {
 					self->UpdateLEDs(0,self->mValueExcitation);
@@ -713,9 +714,11 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 				}
 			}
 			else {
-				if(self->record == true)
-					self->UpdateLEDs(0,0);
+				if(self->record == true) {
 					self->OnBnClickedStoprecord();
+					self->UpdateLEDs(0,0);
+					
+				}
 			}
 		}
 		//-------------------------------
