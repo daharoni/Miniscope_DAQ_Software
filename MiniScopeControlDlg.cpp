@@ -705,12 +705,12 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 		//Added for triggerable recording
 		if (self->mCheckTrigRec == true) {
 			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
-			//str.Format(L"GPIO State: %u",temp);
-			//self->AddListText(str);
+			
 			if ((temp & TRIG_RECORD_EXT) == TRIG_RECORD_EXT) {
-				if (self->record == false)
+				if (self->record == false) {
 					self->UpdateLEDs(0,self->mValueExcitation);
 					self->OnBnClickedRecord();//Start recording
+				}
 			}
 			else {
 				if(self->record == true)
