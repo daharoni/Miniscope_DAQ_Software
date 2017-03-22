@@ -20,9 +20,17 @@ $RECYCLE.BIN/
 # Visual Studio files
 *.aps
 *.VC.db
+*.VC.opendb
 ipch/
 .vs/
-
+*Build*.log
+*.tlog
+*.ilk
+*.log
+*.obj
+*.pch
+*.pdb
+*.res
 
 # =========================
 # Operating System Files
