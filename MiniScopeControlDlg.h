@@ -109,7 +109,7 @@ public:
 	bool behaviorCamConnected;
 	int iLastX ; 
 	int iLastY;
-	LARGE_INTEGER startOfRecord, StartingTime, EndingTime, ElapsedMicroseconds;
+	LARGE_INTEGER startOfRecord, StartingTime, EndingTime; // , ElapsedMicroseconds;
 	LARGE_INTEGER Frequency;
 	CString TSFileName;
 	CString settingsFIleName;

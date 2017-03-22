@@ -283,6 +283,9 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 	behavROI.y = 0;
 	behavROI.width = 0;
 	behavROI.height = 0;
+	startOfRecord = { 0 };
+	StartingTime = { 0 };
+	EndingTime = { 0 };
 
 	mMSFPS = 1;
 	//------------ Timer for cameras -----------
@@ -717,7 +720,7 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 
 	while(1) {	
 		//Added for triggerable recording
-		if (self->mCheckTrigRec == true) {
+		if (self->mCheckTrigRec == TRUE) {
 			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
 			//str.Format(L"GPIO State: %u",temp);
 			//self->AddListText(str);
