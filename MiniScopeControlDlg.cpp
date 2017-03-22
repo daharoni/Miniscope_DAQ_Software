@@ -15,7 +15,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/features2d.hpp"
 //#include "opencv2/flann.hpp"
-#include "opencv2/hal.hpp"
+#include "opencv2/core/hal/hal.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
@@ -109,6 +109,8 @@ CMiniScopeControlDlg::CMiniScopeControlDlg(CWnd* pParent /*=NULL*/)
 	, mMinFluorDisplay(0)
 	, mMaxFluorDisplay(0)
 	, mMSFPS(0)
+	, msCapFrameTime{}
+	, behavCapFrameTime{}
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -144,7 +146,7 @@ void CMiniScopeControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_RED, mRed);
 	DDX_Check(pDX, IDC_GREEN, mGreen);
 	DDX_Text(pDX, IDC_EDIT19, mBehavExposure);
-	//DDX_Control(pDX, IDC_SLIDERBEHAVEXPOSURE2, mSliderBehavExposure);
+	DDX_Control(pDX, IDC_SLIDERBEHAVEXPOSURE, mSliderBehavExposure);
 	DDX_Check(pDX, IDC_CHECKTRIGREC, mCheckTrigRec);
 	DDX_Text(pDX, IDC_EDIT20, mMSDroppedFrames);
 	DDX_Text(pDX, IDC_MINFLUOR, mMinFluor);
@@ -276,6 +278,11 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 
 	mMsCapFrameCountGlobal = 0;
 	mBehavCapFrameCountGlobal = 0;
+
+	behavROI.x = 0;
+	behavROI.y = 0;
+	behavROI.width = 0;
+	behavROI.height = 0;
 
 	mMSFPS = 1;
 	//------------ Timer for cameras -----------
@@ -484,7 +491,7 @@ void CMiniScopeControlDlg::OnBnClickedScopeconnect()
 		GetDlgItem(IDC_RECORD)->EnableWindow(TRUE);
 
 	cv::namedWindow("msCam",CV_WINDOW_NORMAL);// CV_WINDOW_NORMAL | CV_WINDOW_KEEPRATIO
-	cv::moveWindow("msCam", 1100,1);
+	cv::moveWindow("msCam", 10,10);
 	//cv::resizeWindow("msCam",752,480);
 	//cv::resizeWindow("msCam",1280,1024);
 	msCam.open(mScopeCamID);
@@ -535,7 +542,7 @@ void CMiniScopeControlDlg::OnBnClickedBehaviorconnect()
 	UpdateData(TRUE);
 	GetDlgItem(IDC_RECORD)->EnableWindow(FALSE);
 	cv::namedWindow("behavCam");
-	cv::moveWindow("behavCam", 1000,400);
+	cv::moveWindow("behavCam", 20,20);
 	behavCam.open(mBehaviorCamID);
 	
 	GetDlgItem(IDC_SLIDERBEHAVEXPOSURE)->EnableWindow(TRUE);
@@ -637,9 +644,16 @@ void CMiniScopeControlDlg::OnBnClickedRecord()
 	settingsFile.Open(settingsFIleName, CFile::modeCreate|CFile::modeWrite, NULL);
 	str.Format(L"animal\texcitation\tmsCamExposure\trecordLength\n");
 	settingsFile.WriteString(str);
-	str.Format(L"%s\t%i\t%i\t%i\n\nelapsedTime\tNote\n",mMouseName,mValueExcitation,mScopeExposure,mRecordLength);
+	str.Format(L"%s\t%i\t%i\t%i\n",mMouseName,mValueExcitation,mScopeExposure,mRecordLength);
 	settingsFile.WriteString(str);
-	
+
+	str.Format(L"behav_ROI_x\tbehav_ROI_y\tbehav_ROI_w\tbehav_ROI_h\n");
+	settingsFile.WriteString(str);
+	str.Format(L"%i\t%i\t%i\t%i\n", behavROI.x, behavROI.y, behavROI.width, behavROI.height);
+	settingsFile.WriteString(str);
+
+	str.Format(L"elapsedTime\tNote\n");
+	settingsFile.WriteString(str);
 
 	msCamMaxFrames = 1000;
 	behavCamMaxFrames = 1000;
