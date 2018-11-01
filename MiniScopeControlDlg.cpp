@@ -497,6 +497,7 @@ void CMiniScopeControlDlg::OnBnClickedScopeconnect()
 	cv::moveWindow("msCam", 10,10);
 	//cv::resizeWindow("msCam",752,480);
 	//cv::resizeWindow("msCam",1280,1024);
+	//msCam.open(mScopeCamID, cv::CAP_QT);
 	msCam.open(mScopeCamID);
 	
 	//msCam.set(CV_CAP_PROP_CONVERT_RGB,FALSE); //Added to fix messed up top 8 bit of pixel stream
@@ -718,9 +719,15 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 	//cv::Mat trash;
 	//self->msCam.read(trash);
 
-	while(1) {	
+	while(1) {
+		//bool isopened = self->msCam.isOpened();
+		//bool readstatus = self->msCam.grab();
+		//QueryPerformanceCounter(&currentTime);
+		//str.Format(L"t:%u op:%i r:%i, e:%i", currentTime, isopened, readstatus, frame.empty());
+		//self->AddListText(str);
+		//continue;
 		//Added for triggerable recording
-		if (self->mCheckTrigRec == TRUE) {
+		if ((self->mCheckTrigRec == TRUE) && status) {
 			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
 			//str.Format(L"GPIO State: %u",temp);
 			//self->AddListText(str);
@@ -739,30 +746,31 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 			}
 		}
 		//-------------------------------
-		status = self->msCam.grab();
-		if (status == false) {
-			self->record = false;
-			self->AddListText(L"msCam frame grab error! Recording ended.");
-			break;
-		}
+		//if (status == false) {
+		//	self->record = false;
+		//	self->AddListText(L"msCam frame grab error! Recording ended.");
+		//	break;
+		//}
 		previousTime = currentTime;
 		QueryPerformanceCounter(&currentTime);
 		self->mMSCurrentFPS = 1/(((double)currentTime.QuadPart - previousTime.QuadPart)/self->Frequency.QuadPart);
 		
 		self->msCapFrameTime[self->msWritePos%BUFFERLENGTH] = 1000*((double)currentTime.QuadPart - self->startOfRecord.QuadPart)/self->Frequency.QuadPart;
-		
-		status = self->msCam.retrieve(self->msFrame[self->msWritePos%BUFFERLENGTH]);
-		if (status == false) {
-			self->record = false; //Commented out to not end recording Daniel 11_10_2015
+		status = self->msCam.read(frame);
+		// status = self->msCam.read(self->msFrame[self->msWritePos%BUFFERLENGTH]);
+		if ((status == false) || frame.empty()) {
+			//self->record = false; //Commented out to not end recording Daniel 11_10_2015
 			self->mMSDroppedFrames++; //Added frame drop tracker Daniel 11_10_2015
-			self->AddListText(L"msCam frame retrieve error! Recording ended.");
+			self->AddListText(L"msCam frame retrieve error!");
 			//self->dFrameDrop.ShowWindow(SW_SHOW);//popup dialog box Daniel 11_10_2015
+			self->msFrame[self->msWritePos%BUFFERLENGTH] = droppedFrameImage;
 			cv::imshow("msCam",droppedFrameImage);
-			break; //removed break Daniel 11_10_2015
+			//break; //removed break Daniel 11_10_2015
+			continue;
 		}
 		else {//Added else Daniel 11_10_2015
+			self->msFrame[self->msWritePos%BUFFERLENGTH] = frame;
 			if (self->getScreenShot == true) {
-			
 				CT2CA pszConvertedAnsiString = self->folderLocation + "\\" + self->mMouseName + "_" + self->mNote + "_" + self->currentTime + ".png";
 				tempString = pszConvertedAnsiString;
 				cv::imwrite(tempString,self->msFrame[self->msWritePos%BUFFERLENGTH],compression_params);
