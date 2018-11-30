@@ -11,7 +11,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/features2d.hpp"
 //#include "opencv2/flann.hpp"
-#include "opencv2/hal.hpp"
+#include "opencv2/core/hal/hal.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
@@ -109,7 +109,7 @@ public:
 	bool behaviorCamConnected;
 	int iLastX ; 
 	int iLastY;
-	LARGE_INTEGER startOfRecord, StartingTime, EndingTime, ElapsedMicroseconds;
+	LARGE_INTEGER startOfRecord, StartingTime, EndingTime; // , ElapsedMicroseconds;
 	LARGE_INTEGER Frequency;
 	CString TSFileName;
 	CString settingsFIleName;
