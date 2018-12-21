@@ -153,7 +153,7 @@ void CMiniScopeControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_MAXFLUOR, mMaxFluor);
 	DDX_Text(pDX, IDC_MINFLUORDISPLAY, mMinFluorDisplay);
 	DDX_Text(pDX, IDC_MAXFLUORDISPLAY, mMaxFluorDisplay);
-	DDX_CBIndex(pDX, IDC_COMBO1, mMSFPS);
+	//DDX_CBIndex(pDX, IDC_COMBO1, mMSFPS);
 	DDX_Control(pDX, IDC_COMBO1, mMSFPSCBox);
 }
 
@@ -287,7 +287,7 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 	StartingTime = { 0 };
 	EndingTime = { 0 };
 
-	mMSFPS = 1;
+	mMSFPS = 30;
 	//------------ Timer for cameras -----------
 	QueryPerformanceFrequency(&Frequency); 
 	QueryPerformanceCounter(&StartingTime);
@@ -497,8 +497,8 @@ void CMiniScopeControlDlg::OnBnClickedScopeconnect()
 	cv::moveWindow("msCam", 10,10);
 	//cv::resizeWindow("msCam",752,480);
 	//cv::resizeWindow("msCam",1280,1024);
-	//msCam.open(mScopeCamID, cv::CAP_QT);
-	msCam.open(mScopeCamID);
+	msCam.open(mScopeCamID, cv::CAP_DSHOW);
+	//msCam.open(mScopeCamID);
 	
 	//msCam.set(CV_CAP_PROP_CONVERT_RGB,FALSE); //Added to fix messed up top 8 bit of pixel stream
 
@@ -619,8 +619,6 @@ void CMiniScopeControlDlg::OnBnClickedRecord()
 	CTime time = CTime::GetCurrentTime();
 	std::string tempString;
 
-	UpdateData(TRUE);
-
 	CreateDirectory(L"data",NULL);
 	str.Format(L"data\\%u_%u_%u",time.GetMonth(),time.GetDay(),time.GetYear());
 	CreateDirectory(str,NULL);
@@ -699,6 +697,7 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 
 	LARGE_INTEGER previousTime;
 	LARGE_INTEGER currentTime;
+	previousTime = self->startOfRecord;
 	currentTime = self->startOfRecord;
 
 	cv::Mat frame; //moved from inside else loop by Daniel 3_27_2015
@@ -727,37 +726,75 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 		//self->AddListText(str);
 		//continue;
 		//Added for triggerable recording
-		if ((self->mCheckTrigRec == TRUE) && status) {
-			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
-			//str.Format(L"GPIO State: %u",temp);
-			//self->AddListText(str);
-			if ((temp & TRIG_RECORD_EXT) == TRIG_RECORD_EXT) {
-				if (self->record == false) {
-					self->UpdateLEDs(0,self->mValueExcitation);
-					self->OnBnClickedRecord();//Start recording
-				}
-			}
-			else {
-				if(self->record == true) {
-					self->OnBnClickedStoprecord();
-					self->UpdateLEDs(0,0);
-					
-				}
-			}
-		}
 		//-------------------------------
 		//if (status == false) {
 		//	self->record = false;
 		//	self->AddListText(L"msCam frame grab error! Recording ended.");
 		//	break;
 		//}
-		previousTime = currentTime;
-		QueryPerformanceCounter(&currentTime);
-		self->mMSCurrentFPS = 1/(((double)currentTime.QuadPart - previousTime.QuadPart)/self->Frequency.QuadPart);
 		
 		self->msCapFrameTime[self->msWritePos%BUFFERLENGTH] = 1000*((double)currentTime.QuadPart - self->startOfRecord.QuadPart)/self->Frequency.QuadPart;
 		status = self->msCam.read(frame);
 		// status = self->msCam.read(self->msFrame[self->msWritePos%BUFFERLENGTH]);
+				//previousTime = currentTime;
+		QueryPerformanceCounter(&currentTime);
+		self->mMSCurrentFPS = 1 / (((double)currentTime.QuadPart - previousTime.QuadPart) / self->Frequency.QuadPart);
+
+		if ((self->mMSCurrentFPS < ((double)self->mMSFPS / 2.0)) || frame.empty()) {
+			self->AddListText(L"Potential frame drop detected");
+			if ((self->mMSCurrentFPS < ((double)self->mMSFPS / 20.0)) || frame.empty()) {
+				self->AddListText(L"Reconnecting");
+				self->msCam.release();
+				self->msCam.open(self->mScopeCamID, cv::CAP_DSHOW);
+				//self->msCam.open(self->mScopeCamID);
+				self->msCam.set(CV_CAP_PROP_SATURATION, SET_CMOS_SETTINGS);
+			}
+			self->AddListText(L"Sending settings");
+			self->msCam.set(CV_CAP_PROP_BRIGHTNESS, self->mScopeExposure);
+			self->msCam.set(CV_CAP_PROP_GAIN, self->mScopeGain);
+			switch (self->mMSFPS)
+			{
+			case (5):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS5);
+				break;
+			case (10):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS10);
+				break;
+			case (15):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS15);
+				break;
+			case (20):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS20);
+				break;
+			case (30):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS30);
+				break;
+			case (60):
+				self->msCam.set(CV_CAP_PROP_SATURATION, FPS60);
+				break;
+			default:
+				break;
+			}
+			self->UpdateLEDs(0, self->mValueExcitation);
+		}
+		if ((self->mCheckTrigRec == TRUE) && status) {
+			temp = self->msCam.get(CV_CAP_PROP_SATURATION);
+			//str.Format(L"GPIO State: %u",temp);
+			//self->AddListText(str);
+			if ((temp & TRIG_RECORD_EXT) == TRIG_RECORD_EXT) {
+				if (self->record == false) {
+					self->UpdateLEDs(0, self->mValueExcitation);
+					self->OnBnClickedRecord();//Start recording
+				}
+			}
+			else {
+				if (self->record == true) {
+					self->OnBnClickedStoprecord();
+					self->UpdateLEDs(0, 0);
+
+				}
+			}
+		}
 		if ((status == false) || frame.empty()) {
 			//self->record = false; //Commented out to not end recording Daniel 11_10_2015
 			self->mMSDroppedFrames++; //Added frame drop tracker Daniel 11_10_2015
@@ -766,6 +803,7 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 			self->msFrame[self->msWritePos%BUFFERLENGTH] = droppedFrameImage;
 			cv::imshow("msCam",droppedFrameImage);
 			//break; //removed break Daniel 11_10_2015
+			QueryPerformanceCounter(&previousTime);
 			continue;
 		}
 		else {//Added else Daniel 11_10_2015
@@ -830,7 +868,9 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 				}
 			}
 		}
+		QueryPerformanceCounter(&previousTime);
 	}
+	self->msCam.release();
 	return 0;
 }
 UINT CMiniScopeControlDlg::behavCapture(LPVOID pParam )
@@ -1163,7 +1203,7 @@ void CMiniScopeControlDlg::OnCbnCloseupCombo1()
 		default:
 			break;
 	}
-	str.Format(L"Scope FPS updated: %d", cBoxVal);
-			AddListText(str);
-
+	mMSFPS = cBoxVal;
+	str.Format(L"Scope FPS updated: %d", mMSFPS);
+	AddListText(str);
 }
