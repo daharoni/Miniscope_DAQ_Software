@@ -620,24 +620,26 @@ void CMiniScopeControlDlg::OnBnClickedRecord()
 	std::string tempString;
 
 	CreateDirectory(L"data",NULL);
-	str.Format(L"data\\%u_%u_%u",time.GetMonth(),time.GetDay(),time.GetYear());
+	str.Format(L"data\\%s", mMouseName);
+	CreateDirectory(str, NULL);
+	str.Format(L"data\\%s\\%u_%u_%u",mMouseName,time.GetMonth(),time.GetDay(),time.GetYear());
 	CreateDirectory(str,NULL);
-	str.Format(L"data\\%u_%u_%u\\H%u_M%u_S%u",time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond());
+	str.Format(L"data\\%s\\%u_%u_%u\\H%u_M%u_S%u",mMouseName,time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond());
 	CreateDirectory(str,NULL);
-	TSFileName.Format(L"data\\%u_%u_%u\\H%u_M%u_S%u\\%s",time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond(), L"timestamp.dat");
-	settingsFIleName.Format(L"data\\%u_%u_%u\\H%u_M%u_S%u\\%s",time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond(), L"settings_and_notes.dat");
+	TSFileName.Format(L"data\\%s\\%u_%u_%u\\H%u_M%u_S%u\\%s",mMouseName,time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond(), L"timestamp.dat");
+	settingsFIleName.Format(L"data\\%s\\%u_%u_%u\\H%u_M%u_S%u\\%s",mMouseName,time.GetMonth(),time.GetDay(),time.GetYear(),time.GetHour(),time.GetMinute(),time.GetSecond(), L"settings_and_notes.dat");
+
+	msCamFileName = CT2A((str + L"\\msCam").GetString());
+	behavCamFileName = CT2A((str + L"\\behavCam").GetString());
 
 	str.Format(L"Files created in %s", str);
 	AddListText(str);
 
-	std::ostringstream os, os2;
-	os << "data\\" << time.GetMonth() << "_"  << time.GetDay() << "_"  << time.GetYear() << "\\H"  << time.GetHour() << "_M"  << time.GetMinute() << "_S" << time.GetSecond() << "\\msCam";
+	/*std::ostringstream os, os2;
+	os << "data\\" << mMouseName << "\\" << time.GetMonth() << "_"  << time.GetDay() << "_"  << time.GetYear() << "\\H"  << time.GetHour() << "_M"  << time.GetMinute() << "_S" << time.GetSecond() << "\\msCam";
 	msCamFileName = os.str();
-	os2  << "data\\" << time.GetMonth() << "_" << time.GetDay() << "_" << time.GetYear() << "\\H" << time.GetHour() << "_M" << time.GetMinute() << "_S" << time.GetSecond() << "\\behavCam";
-	behavCamFileName = os2.str();
-	
-	
-
+	os2  << "data\\" << mMouseName << "\\" << time.GetMonth() << "_" << time.GetDay() << "_" << time.GetYear() << "\\H" << time.GetHour() << "_M" << time.GetMinute() << "_S" << time.GetSecond() << "\\behavCam";
+	behavCamFileName = os2.str();*/
 
 	TSFile.Open(TSFileName, CFile::modeCreate|CFile::modeWrite, NULL);
 	str.Format(L"camNum\tframeNum\tsysClock\tbuffer\n");
