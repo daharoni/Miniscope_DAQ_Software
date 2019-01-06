@@ -151,7 +151,7 @@ void CMiniScopeControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_MAXFLUOR, mMaxFluor);
 	DDX_Text(pDX, IDC_MINFLUORDISPLAY, mMinFluorDisplay);
 	DDX_Text(pDX, IDC_MAXFLUORDISPLAY, mMaxFluorDisplay);
-	DDX_CBIndex(pDX, IDC_COMBO1, mMSFPS);
+	//DDX_CBIndex(pDX, IDC_COMBO1, mMSFPS);
 	DDX_Control(pDX, IDC_COMBO1, mMSFPSCBox);
 }
 
@@ -224,6 +224,7 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 
+	mMSFPSCBox.SetCurSel(1);
 	dFrameDrop.Create(IDD_CAMDISCONNECTED,this);
 	mSliderExcitation.SetRange(0,100,1);
 	mScopeExposure = 100;
@@ -277,7 +278,7 @@ BOOL CMiniScopeControlDlg::OnInitDialog()
 	mMsCapFrameCountGlobal = 0;
 	mBehavCapFrameCountGlobal = 0;
 
-	mMSFPS = 1;
+	mMSFPS = 30;
 	//------------ Timer for cameras -----------
 	QueryPerformanceFrequency(&Frequency); 
 	QueryPerformanceCounter(&StartingTime);
@@ -725,8 +726,8 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 		status = self->msCam.grab();
 		if (status == false) {
 			self->record = false;
-			self->AddListText(L"msCam frame grab error! Recording ended.");
-			break;
+			self->AddListText(L"msCam frame grab error!");
+			continue;
 		}
 		previousTime = currentTime;
 		QueryPerformanceCounter(&currentTime);
@@ -734,16 +735,31 @@ UINT CMiniScopeControlDlg::msCapture(LPVOID pParam )
 		
 		self->msCapFrameTime[self->msWritePos%BUFFERLENGTH] = 1000*((double)currentTime.QuadPart - self->startOfRecord.QuadPart)/self->Frequency.QuadPart;
 		
+
 		status = self->msCam.retrieve(self->msFrame[self->msWritePos%BUFFERLENGTH]);
 		if (status == false) {
-			self->record = false; //Commented out to not end recording Daniel 11_10_2015
+			//self->record = false;
 			self->mMSDroppedFrames++; //Added frame drop tracker Daniel 11_10_2015
-			self->AddListText(L"msCam frame retrieve error! Recording ended.");
+			self->AddListText(L"msCam frame retrieve error!");
 			//self->dFrameDrop.ShowWindow(SW_SHOW);//popup dialog box Daniel 11_10_2015
 			cv::imshow("msCam",droppedFrameImage);
-			break; //removed break Daniel 11_10_2015
+			if (self->mMSDroppedFrames > 0) {
+				self->AddListText(L"reconnecting");
+				self->msCam.release();
+				self->msCam.open(self->mScopeCamID);
+			}
+			continue;
 		}
 		else {//Added else Daniel 11_10_2015
+			if (self->mMSDroppedFrames > 0 || self->mMSCurrentFPS < self->mMSFPS / 2.0) {
+				self->AddListText(L"sending settings");
+				self->msCam.set(CV_CAP_PROP_BRIGHTNESS, self->mScopeExposure);
+				self->msCam.set(CV_CAP_PROP_GAIN, self->mScopeGain);
+				self->OnCbnCloseupCombo1();
+				self->UpdateLEDs(0, self->mValueExcitation);
+				self->mMSDroppedFrames = 0;
+				continue;
+			}
 			if (self->getScreenShot == true) {
 			
 				CT2CA pszConvertedAnsiString = self->folderLocation + "\\" + self->mMouseName + "_" + self->mNote + "_" + self->currentTime + ".png";
@@ -1138,6 +1154,7 @@ void CMiniScopeControlDlg::OnCbnCloseupCombo1()
 		default:
 			break;
 	}
+	mMSFPS = cBoxVal;
 	str.Format(L"Scope FPS updated: %d", cBoxVal);
 			AddListText(str);
 
