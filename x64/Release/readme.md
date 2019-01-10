@@ -8,9 +8,12 @@ This software has been test on PCs running Windows 10. The ".exe" requires the a
 
 ### Prerequisites
 
-You will need to download opencv_world343.dll and opencv_world343d.dll and place them in the same folder containing "MiniScopeControl.exe". 
+You will need to download the OpenCV 2.4.13 .dlls and place them in the same folder containing "MiniScopeControl.exe". 
 
-You can download all of OpenCV here, https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.4.3/opencv-3.4.3-vc14_vc15.exe/download.
-Find the required dll's in "opencv/build/x64/vc14/bin"
+* You can download all of OpenCV here, https://sourceforge.net/projects/opencvlibrary/files/opencv-win/2.4.13/opencv-2.4.13.6-vc14.exe/download.
+* Find the required dll's in "opencv/build/x64/vc14/bin"
+* You need:
+  * opencv_core2413.dll
+  * opencv_highgui2413.dll
+  * opencv_imgproc2413.dll
 
-Or you can try to grab only the 2 required dll's from my Google Drive here, https://drive.google.com/open?id=1xZrRcIMf4dlrWX80ETP5STo9SS9PoGtW
